@@ -35,7 +35,9 @@
         <Resource Include="Assets\stratum.ico" />
         <!-- Service icons shipped with the app; enumerated at runtime by FileAssetProvider -->
         <Content Include="..\icons\*.png" Link="Assets\icons\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-        <Content Include="..\extraicons\*.png" Link="Assets\icons\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+        <!-- Extra icons; two of them already exist in icons/ (publish fails on duplicate targets) -->
+        <Content Include="..\extraicons\*.png" Exclude="..\extraicons\reddit.png;..\extraicons\yandex.png"
+                 Link="Assets\icons\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
         <Content Include="..\doc\icon.png" Link="Assets\icon.png" Condition="Exists('..\doc\icon.png')" CopyToOutputDirectory="PreserveNewest" />
         <!-- Template used for HTML backups -->
         <Content Include="..\Stratum.Droid\Assets\backup_template.html" Link="Assets\backup_template.html" CopyToOutputDirectory="PreserveNewest" />
