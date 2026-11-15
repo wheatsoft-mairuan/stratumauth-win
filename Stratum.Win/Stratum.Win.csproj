@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <UseWPF>true</UseWPF>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>disable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <AssemblyName>Stratum</AssemblyName>
+        <RootNamespace>Stratum.Win</RootNamespace>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <Product>Stratum</Product>
+        <AssemblyTitle>Stratum</AssemblyTitle>
+        <Company>Stratum</Company>
+        <Description>Two-Factor Authentication client for Windows</Description>
+        <Version>1.0.0</Version>
+        <SatelliteResourceLanguages>en;zh-Hans</SatelliteResourceLanguages>
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- SQLCipher native provider for Windows (sqlite-net-base from Stratum.Core talks to it) -->
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.1.11" />
+        <PackageReference Include="ZXing.Net" Version="0.16.11" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Stratum.Core\Stratum.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Service icons shipped with the app; enumerated at runtime by FileAssetProvider -->
+        <Content Include="..\icons\*.png" Link="Assets\icons\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="..\extraicons\*.png" Link="Assets\icons\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="..\doc\icon.png" Link="Assets\icon.png" Condition="Exists('..\doc\icon.png')" CopyToOutputDirectory="PreserveNewest" />
+        <!-- Template used for HTML backups -->
+        <Content Include="..\Stratum.Droid\Assets\backup_template.html" Link="Assets\backup_template.html" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+</Project>

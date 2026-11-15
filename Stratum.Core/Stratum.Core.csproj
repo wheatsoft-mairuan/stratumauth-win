@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net11.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>disable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -16,7 +16,8 @@
         <PackageReference Include="QRCoder" Version="1.8.1" />
         <PackageReference Include="SharpZipLib" Version="1.4.2"/>
         <PackageReference Include="SimpleBase" Version="5.6.4" />
+        <!-- SQLCipher native provider is supplied by the platform head:
+             Android -> Stratum.Droid (StratumAuth.SQLCipher), Windows -> Stratum.Win (SQLitePCLRaw.bundle_e_sqlcipher) -->
         <PackageReference Include="sqlite-net-base" Version="1.9.172" />
-        <PackageReference Include="StratumAuth.SQLCipher" Version="1.6.0" />
     </ItemGroup>
 </Project>

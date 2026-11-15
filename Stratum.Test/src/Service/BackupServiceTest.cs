@@ -9,10 +9,9 @@ using Stratum.Core.Entity;
 using Stratum.Core.Persistence;
 using Stratum.Core.Service;
 using Stratum.Core.Service.Impl;
-using Stratum.ZXing;
+using Stratum.Test;
 using HtmlAgilityPack;
 using Moq;
-using SkiaSharp;
 using Xunit;
 
 namespace Stratum.Test.Service
@@ -103,8 +102,6 @@ namespace Stratum.Test.Service
             var rows = document.DocumentNode.SelectNodes("//tr");
             Assert.Equal(2, rows.Count);
 
-            var qrCodeReader = new QrCodeReader();
-
             void AssertRowMatches(HtmlNode node, Authenticator auth)
             {
                 var tds = node.SelectNodes("td");
@@ -115,10 +112,8 @@ namespace Stratum.Test.Service
                 var img = tds[3].SelectSingleNode("img");
                 var src = img.Attributes["src"].Value;
                 var data = Convert.FromBase64String(src["data:image/png;base64,".Length..]);
-                
-                using var image = SKBitmap.Decode(data);
-                using var imageView = new ImageView(image.GetPixelSpan(), image.Width, image.Height, ImageFormat.Lum);
-                Assert.Equal(auth.GetUri(), qrCodeReader.Read(imageView));
+
+                Assert.Equal(auth.GetUri(), TestQrReader.ReadPng(data));
             }
 
             AssertRowMatches(rows[0], authA);

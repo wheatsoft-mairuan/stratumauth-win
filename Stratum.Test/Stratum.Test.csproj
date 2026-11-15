@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net11.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>disable</Nullable>
         <IsPackable>false</IsPackable>
@@ -16,15 +16,15 @@
         </PackageReference>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
         <PackageReference Include="Moq" Version="4.21.0" />
+        <!-- QR decoding of the HTML backup fixture: Windows replacement for Stratum.ZXing -->
         <PackageReference Include="SkiaSharp" Version="4.154.0" />
-        <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.154.0" />
-        <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="4.154.0" />
         <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.154.0" />
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.1.11" />
         <PackageReference Include="xunit" Version="2.9.3" />
+        <PackageReference Include="ZXing.Net" Version="0.16.11" />
         <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="StratumAuth.ZXing" Version="1.6.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Stratum.Core\Stratum.Core.csproj" />
