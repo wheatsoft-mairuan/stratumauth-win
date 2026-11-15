@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
 using Stratum.Core;
@@ -84,12 +85,15 @@ namespace Stratum.Win.Views
 
         private async Task DeleteAsync(AuthenticatorItemViewModel item)
         {
-            var result = MessageBox.Show(this, $"确定删除「{item.Issuer}」吗？", "删除验证器",
-                MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-
-            if (result != MessageBoxResult.Yes)
+            if (Services.Settings.ConfirmDelete)
             {
-                return;
+                var result = MessageBox.Show(this, $"确定删除「{item.Issuer}」吗？", "删除验证器",
+                    MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+
+                if (result != MessageBoxResult.Yes)
+                {
+                    return;
+                }
             }
 
             try
@@ -102,6 +106,212 @@ namespace Stratum.Win.Views
             }
         }
 
+        private void Card_RightClick(object sender, MouseButtonEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is not AuthenticatorItemViewModel item)
+            {
+                return;
+            }
+
+            var menu = new ContextMenu();
+
+            var copy = new MenuItem { Header = "复制验证码" };
+            copy.Click += async (_, _) => await _viewModel.CopyAsync(item);
+
+            var edit = new MenuItem { Header = "编辑…" };
+            edit.Click += async (_, _) => await EditAsync(item);
+
+            var categories = new MenuItem { Header = "分类…" };
+            categories.Click += async (_, _) => await AssignCategoriesAsync(item);
+
+            var up = new MenuItem { Header = "上移" };
+            up.Click += async (_, _) => await MoveAsync(item, -1);
+
+            var down = new MenuItem { Header = "下移" };
+            down.Click += async (_, _) => await MoveAsync(item, 1);
+
+            var delete = new MenuItem { Header = "删除" };
+            delete.Click += async (_, _) => await DeleteAsync(item);
+
+            menu.Items.Add(copy);
+            menu.Items.Add(edit);
+            menu.Items.Add(categories);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(up);
+            menu.Items.Add(down);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(delete);
+            menu.PlacementTarget = (UIElement) sender;
+            menu.IsOpen = true;
+            e.Handled = true;
+        }
+
+        private async Task EditAsync(AuthenticatorItemViewModel item)
+        {
+            var dialog = new AuthenticatorEditorWindow(item.Auth) { Owner = this };
+
+            if (dialog.ShowDialog() != true || dialog.Result == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await _viewModel.UpdateAsync(dialog.Result);
+                await ApplyCustomIconAsync(dialog.Result, dialog.CustomIcon);
+                await _viewModel.ReloadAsync();
+            }
+            catch (Exception exception)
+            {
+                ShowError("无法保存", exception);
+            }
+        }
+
+        private async Task MoveAsync(AuthenticatorItemViewModel item, int delta)
+        {
+            try
+            {
+                await _viewModel.MoveAsync(item, delta);
+            }
+            catch (Exception exception)
+            {
+                ShowError("无法调整顺序", exception);
+            }
+        }
+
+        private async Task AssignCategoriesAsync(AuthenticatorItemViewModel item)        {
+            try
+            {
+                var all = await AppServices.CategoryService.GetAllCategoriesAsync();
+                var assigned = await _viewModel.GetAssignedCategoriesAsync(item.Auth);
+                var dialog = new CategoryAssignWindow(all, assigned) { Owner = this };
+
+                if (dialog.ShowDialog() != true)
+                {
+                    return;
+                }
+
+                await _viewModel.SetAssignedCategoriesAsync(item.Auth, dialog.Selected);
+            }
+            catch (Exception exception)
+            {
+                ShowError("无法保存分类", exception);
+            }
+        }
+
+        private async void AddCategory_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new TextInputWindow("新建分类", "分类名称：", "例如：工作、个人")
+            {
+                Owner = this
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            var name = dialog.Value?.Trim();
+
+            if (string.IsNullOrEmpty(name))
+            {
+                return;
+            }
+
+            try
+            {
+                await _viewModel.AddCategoryAsync(name);
+            }
+            catch (Exception exception)
+            {
+                ShowError("无法新建分类", exception);
+            }
+        }
+
+        private void CategoryList_RightClick(object sender, MouseButtonEventArgs e)
+        {
+            if ((sender as ListBox)?.SelectedItem is not CategoryNode node || !node.IsEditable)
+            {
+                return;
+            }
+
+            var menu = new ContextMenu();
+
+            var rename = new MenuItem { Header = "重命名…" };
+            rename.Click += async (_, _) => await RenameCategoryAsync(node);
+
+            var delete = new MenuItem { Header = "删除" };
+            delete.Click += async (_, _) => await DeleteCategoryAsync(node);
+
+            menu.Items.Add(rename);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(delete);
+            menu.PlacementTarget = sender as UIElement;
+            menu.IsOpen = true;
+            e.Handled = true;
+        }
+
+        private async Task RenameCategoryAsync(CategoryNode node)
+        {
+            var dialog = new TextInputWindow("重命名分类", "分类名称：", null, node.Name)
+            {
+                Owner = this
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            var name = dialog.Value?.Trim();
+
+            if (string.IsNullOrEmpty(name) || name == node.Name)
+            {
+                return;
+            }
+
+            try
+            {
+                await _viewModel.RenameCategoryAsync(node.Category, name);
+            }
+            catch (Exception exception)
+            {
+                ShowError("无法重命名分类", exception);
+            }
+        }
+
+        private async Task DeleteCategoryAsync(CategoryNode node)
+        {
+            var result = MessageBox.Show(this,
+                $"删除分类「{node.Name}」？其中的验证器不会被删除，只会失去这个分类。",
+                "删除分类", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            try
+            {
+                await _viewModel.DeleteCategoryAsync(node.Category);
+            }
+            catch (Exception exception)
+            {
+                ShowError("无法删除分类", exception);
+            }
+        }
+
+        private static async Task ApplyCustomIconAsync(Authenticator auth, CustomIcon icon)
+        {
+            if (icon == null)
+            {
+                return;
+            }
+
+            await AppServices.AuthenticatorService.SetCustomIconAsync(auth, icon);
+            await AppServices.ReloadCustomIconsAsync();
+        }
+
         private async void AddManual_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new AuthenticatorEditorWindow { Owner = this };
@@ -109,6 +319,8 @@ namespace Stratum.Win.Views
             if (dialog.ShowDialog() == true && dialog.Result != null)
             {
                 await TryAddAsync(dialog.Result);
+                await ApplyCustomIconAsync(dialog.Result, dialog.CustomIcon);
+                await _viewModel.ReloadAsync();
             }
         }
 
@@ -154,6 +366,16 @@ namespace Stratum.Win.Views
             var window = new ImportWindow { Owner = this };
             window.Imported += async (_, _) => await _viewModel.ReloadAsync();
             window.ShowDialog();
+        }
+
+        private void Settings_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new SettingsWindow { Owner = this };
+
+            if (dialog.ShowDialog() == true)
+            {
+                _viewModel.ApplySettings();
+            }
         }
 
         private void Backup_Click(object sender, RoutedEventArgs e)

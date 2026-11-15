@@ -10,6 +10,7 @@
         <AssemblyName>Stratum</AssemblyName>
         <RootNamespace>Stratum.Win</RootNamespace>
         <ApplicationManifest>app.manifest</ApplicationManifest>
+        <ApplicationIcon>Assets\stratum.ico</ApplicationIcon>
         <Product>Stratum</Product>
         <AssemblyTitle>Stratum</AssemblyTitle>
         <Company>Stratum</Company>
@@ -30,6 +31,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- App icon: embedded as a resource so the window can show it too -->
+        <Resource Include="Assets\stratum.ico" />
         <!-- Service icons shipped with the app; enumerated at runtime by FileAssetProvider -->
         <Content Include="..\icons\*.png" Link="Assets\icons\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
         <Content Include="..\extraicons\*.png" Link="Assets\icons\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

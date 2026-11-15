@@ -24,6 +24,9 @@ namespace Stratum.Win.Services
 
         [JsonPropertyName("viewMode")]
         public string ViewMode { get; set; } = "list";
+
+        [JsonPropertyName("confirmDelete")]
+        public bool ConfirmDelete { get; set; } = true;
     }
 
     /// <summary>
@@ -37,6 +40,20 @@ namespace Stratum.Win.Services
         public static AppSettings Current => Lazy.Value;
 
         public static int CodeGroupSize => Current.CodeGroupSize;
+
+        public static bool ShowUsernames => Current.ShowUsernames;
+
+        public static bool ConfirmDelete => Current.ConfirmDelete;
+
+        /// <summary>Maps the stored sort preference onto the Core enum.</summary>
+        public static Core.SortMode SortMode => Current.SortMode switch
+        {
+            "asc" => Core.SortMode.AlphabeticalAscending,
+            "desc" => Core.SortMode.AlphabeticalDescending,
+            "copyasc" => Core.SortMode.CopyCountAscending,
+            "copydesc" => Core.SortMode.CopyCountDescending,
+            _ => Core.SortMode.Custom
+        };
 
         private static string Path => System.IO.Path.Combine(AppPaths.AppDataDirectory, "settings.json");
 

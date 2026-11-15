@@ -101,8 +101,24 @@ namespace Stratum.Win
             DefaultIconView = new DefaultIconView();
 
             await AuthenticatorView.LoadFromPersistenceAsync();
+            await ReloadCustomIconsAsync();
 
             IsInitialized = true;
+        }
+
+        /// <summary>Refreshes the in-memory custom icon cache (needed after imports and icon edits).</summary>
+        public static async Task ReloadCustomIconsAsync()
+        {
+            var icons = await CustomIconService.GetAllAsync();
+
+            IconImageProvider.CustomIcons.Clear();
+
+            foreach (var icon in icons)
+            {
+                IconImageProvider.CustomIcons[icon.Id] = icon.Data;
+            }
+
+            IconImageProvider.Invalidate();
         }
     }
 }

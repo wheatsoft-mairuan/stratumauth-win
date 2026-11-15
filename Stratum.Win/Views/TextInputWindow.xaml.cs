@@ -7,12 +7,24 @@ namespace Stratum.Win.Views
 {
     public partial class TextInputWindow : Window
     {
-        public TextInputWindow(string title, string hint)
+        public TextInputWindow(string title, string hint, string placeholder = null, string initial = null)
         {
             InitializeComponent();
             Title = title;
             HintText.Text = hint;
+
+            if (!string.IsNullOrEmpty(placeholder))
+            {
+                Input.ToolTip = placeholder;
+            }
+
+            if (!string.IsNullOrEmpty(initial))
+            {
+                Input.Text = initial;
+            }
+
             Input.Focus();
+            Input.SelectAll();
         }
 
         public string Value => Input.Text;

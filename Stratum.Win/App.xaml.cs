@@ -38,13 +38,27 @@ namespace Stratum.Win
                 var dialogPath = e.Args.ElementAtOrDefault(smokeDialogIndex + 2)
                                  ?? Path.Combine(Environment.CurrentDirectory, "dialog.png");
 
-                Window dialog = kind switch
+                Window dialog;
+
+                if (kind == "assign")
                 {
-                    "uri" => new Views.TextInputWindow("从 URI 添加", "粘贴 otpauth:// 或 motp:// 链接："),
-                    "import" => new Views.ImportWindow(),
-                    "backup" => new Views.BackupWindow(),
-                    _ => new Views.AuthenticatorEditorWindow()
-                };
+                    var categories = await AppServices.CategoryRepository.GetAllAsync();
+                    dialog = new Views.CategoryAssignWindow(categories,
+                        new System.Collections.Generic.List<Stratum.Core.Entity.Category>());
+                }
+                else
+                {
+                    dialog = kind switch
+                    {
+                        "uri" => new Views.TextInputWindow("从 URI 添加", "粘贴 otpauth:// 或 motp:// 链接："),
+                        "import" => new Views.ImportWindow(),
+                        "backup" => new Views.BackupWindow(),
+                        "icons" => new Views.IconPickerWindow("github"),
+                        "edit" => new Views.AuthenticatorEditorWindow(AppServices.AuthenticatorView.FirstOrDefault()),
+                        "settings" => new Views.SettingsWindow(),
+                        _ => new Views.AuthenticatorEditorWindow()
+                    };
+                }
 
                 dialog.Show();
                 await RenderSmokeAsync(dialog, dialogPath, 700);

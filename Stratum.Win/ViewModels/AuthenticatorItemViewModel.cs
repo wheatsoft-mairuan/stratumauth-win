@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2026 jmh
+// Copyright (C) 2026 jmh
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System;
@@ -38,6 +38,9 @@ namespace Stratum.Win.ViewModels
         public string Username => _auth.Username;
 
         public bool HasUsername => !string.IsNullOrEmpty(_auth.Username);
+
+        /// <summary>Whether the username row should be shown, honouring the preference.</summary>
+        public bool ShowUsername => HasUsername && Settings.ShowUsernames;
 
         public string IconKey => string.IsNullOrEmpty(_auth.Icon) ? IconCatalog.Default : _auth.Icon;
 
@@ -142,29 +145,7 @@ namespace Stratum.Win.ViewModels
 
         private BitmapImage LoadIcon()
         {
-            var catalog = IconCatalog.Instance;
-            var path = catalog.ResolvePath(IconKey, false)
-                       ?? catalog.ResolvePath(IconCatalog.Default, false);
-
-            if (path == null)
-            {
-                return null;
-            }
-
-            try
-            {
-                var image = new BitmapImage();
-                image.BeginInit();
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.UriSource = new Uri(path);
-                image.EndInit();
-                image.Freeze();
-                return image;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return IconImageProvider.Load(IconKey);
         }
     }
 }
