@@ -1,5 +1,6 @@
 # Stratum for Windows
 
+*Note: This warehouse is not yet fully completed.*
 A Windows desktop port of [Stratum](https://github.com/stratumauth/app), the open source
 two-factor authentication app for Android.
 
