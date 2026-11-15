@@ -1,98 +1,85 @@
-![GitHub](https://img.shields.io/github/license/stratumauth/app?style=flat)
-![GitHub stars](https://img.shields.io/github/stars/stratumauth/app?style=flat)
-![GitHub last commit](https://img.shields.io/github/last-commit/stratumauth/app?style=flat)
-[![Crowdin](https://badges.crowdin.net/authenticator-pro/localized.svg)](https://crowdin.com/project/authenticator-pro)
+# Stratum for Windows
 
-![Stratum](./doc/RebrandingMaterial/Wordmark.png)
-<br/><br/>
+A Windows desktop port of [Stratum](https://github.com/stratumauth/app), the open source
+two-factor authentication app for Android.
 
-A free open-source two factor authentication app for Android. It features encrypted backups, icons, categories and a high level of customisation. It also has a Wear OS companion app.
+The port keeps the original engine: authenticators, generators, categories, icon handling
+and backup converters come straight from `Stratum.Core` and the portable part of the Android
+data layer. Only the UI shell is new (WPF).
 
-It supports TOTP (Time Based) and HOTP (Counter Based) authenticators using either SHA1, SHA256 or SHA512 hashing algorithms. Mobile-Otp (mOTP), Steam and Yandex are also supported.
+## Features
 
-## Download ⬇️
-[<img alt="Get it on Google Play" height="100" src="./doc/googleplay.png">](https://play.google.com/store/apps/details?id=com.stratumauth.app)
-[<img alt="Get it on F-Droid" height="100" src="./doc/izzyondroid.png">](https://apt.izzysoft.de/fdroid/index/apk/com.stratumauth.app)
+- TOTP, HOTP, Steam, Yandex and mOTP codes, SHA-1 / SHA-256 / SHA-512, 6-8 digits
+- Dark, keyboard friendly list with live countdown rings and click-to-copy
+- Search by issuer or username, categories in a sidebar, custom ordering
+- ~1,060 bundled service icons, automatic icon detection by issuer name, custom icons from
+  any image file
+- Import from Stratum backup (`.stratum`), Aegis, Bitwarden, Ente Auth, 2FAS, KeePass,
+  LastPass, Proton, TOTP Authenticator, WinAuth, FreeOTP(+), andOTP, Authenticator Plus,
+  Google Authenticator export QR, HTML backups and URI lists
+- Export to an encrypted `.stratum` backup (Argon2id + AES-256-GCM), an HTML page or a URI list
 
-> Stratum is currently only available on the F-Droid client through the [IzzyOnDroid repo](https://apt.izzysoft.de/fdroid/). You must first add this repository in the F-Droid client.
+## Backups are compatible with Android
 
-### Signature
+The `.stratum` format is the one Stratum for Android reads and writes, so a backup made on
+Windows can be restored on Android and vice versa. Encrypted backups ask for the password
+when importing.
 
-In order to verify the authenticity of the APKs, compare the certificate signatures using `apksigner` with these values:
+## Where the data lives
 
 ```
-SHA-256 digest: b975b325e4f39465df1034d6bc2c11a3926f60cc07b820c51fbe1c757555f28a
-SHA-1 digest: b6a100cefaf7f4bc7d0879d71ad36c555a8b850e
-MD5 digest: bb884532b0ee1b3f04dd9917409d5126
+%APPDATA%\Stratum\
+    authenticator.db3     SQLCipher database (same schema as Android)
+    database.key          database passphrase, protected with Windows DPAPI (current user)
+    settings.json         preferences
+    Logs\stratum-*.log
 ```
 
-## Support development ❤️
-[<img alt="Buy Me a Coffee" height="100" src="./doc/buymeacoffee.png">](https://www.buymeacoffee.com/jamiemh)
+Set the `STRATUM_DATA_DIR` environment variable to use a different directory (handy for
+testing against throw-away data).
 
-## Quick Links 🔗
+Because the database passphrase is sealed with DPAPI, the app unlocks itself for the Windows
+user who created it. Other accounts on the same machine cannot decrypt it.
 
-[Request Icons](https://github.com/stratumauth/app/issues/new?assignees=&labels=enhancement&template=icon_request.md&title=)
- 
-[Frequently Asked Questions](https://github.com/stratumauth/app/wiki#frequently-asked-questions)
+## Building
 
-[Contribution Guide](https://github.com/stratumauth/app/blob/master/CONTRIBUTING.md)
+Requires the .NET 10 SDK (Windows) and network access for the NuGet packages.
 
-[Backup File Format](https://github.com/stratumauth/app/blob/master/doc/BACKUP_FORMAT.md)
+```
+dotnet build Stratum.Desktop.sln
+dotnet run --project Stratum.Win\Stratum.Win.csproj
+```
 
-### Importing from other apps:
+`Stratum.Desktop.sln` contains only the desktop projects (`Stratum.Core`, `Stratum.Win`,
+`Stratum.Test`). The original `Stratum.sln` still holds the Android projects and needs the
+Android workload.
 
-[Google Authenticator](https://github.com/stratumauth/app/wiki/Importing-from-Google-Authenticator)
+Publish a self-contained-ish single folder build:
 
-[Blizzard Authenticator](https://github.com/stratumauth/app/wiki/Importing-from-Blizzard-Authenticator)
+```
+dotnet publish Stratum.Win\Stratum.Win.csproj -c Release -r win-x64 --self-contained false -o publish
+```
 
-[Steam](https://github.com/stratumauth/app/wiki/Importing-from-Steam)
+## Tests
 
-[Authy](https://github.com/stratumauth/app/wiki/Importing-from-Authy)
+`Stratum.Test` is the original Core test suite, retargeted to `net10.0`. It passes in full
+against the ported engine (backup converters, generators, URI parsing, encryption).
 
-## Features 🪄
+```
+dotnet test Stratum.Desktop.sln
+```
 
-⚙️ **Compatibility:** Stratum is compatible with most providers and accounts.
- 
-💾 **Backup / Restore:** Backup your authenticators with strong encryption. In case you lose your or change phone, you can always gain access to your accounts. Save to cloud storage or to your device.
+The Core library is verified on every change; the UI is checked with rendered screenshots
+(`Stratum.exe --smoke <png>`, `--smoke-dialog <editor|uri|import|backup|icons|edit|settings|assign> <png>`).
 
-🌙 **Dark Mode:** Stratum has a beautiful material design inspired look in either light or dark themes.
+## Security notes
 
-⏺️ **Icons:** Find your authenticators easily with recognisable brand logos and icons next to each code.
+- Codes are computed locally; nothing leaves the machine except the optional HTML/URI exports
+  you create yourself.
+- The clipboard is used when you copy a code; Windows clipboard history may keep a copy.
+- Screenshots of the app are not blocked (unlike Android, where the port keeps the
+  "no screenshots" behaviour of the flags you set).
 
-📂 **Categories:** Organise your authenticators into categories.
+## Licence
 
-🔒 **Offline with few permissions:** Stratum only requires a single permission and does not require Internet access to function.
-
-🎨 **Customisation:** Set icons and rename. You can also arrange your authenticators in any order you like so you can find them easily.
-
-⌚ **Wear OS:** Quickly view your authenticators directly from your watch. Please note that a connection to your Android device is required.
-
-## Screenshots 📱
-
-![Screenshot 1](./doc/screenshot1.png)
-![Screenshot 2](./doc/screenshot2.png)
-![Screenshot 3](./doc/screenshot3.png)
-![Screenshot 4](./doc/screenshot4.png)
-![Screenshot 5](./doc/screenshot5.png)
-![Screenshot 6](./doc/screenshot6.png)
-![Screenshot 7](./doc/screenshot7.png)
-![Screenshot 8](./doc/screenshot8.png)
-<br/><br/>
-
-### Wear OS Companion
-
-![Screenshot 1](./doc/wearos_screenshot1.png)
-![Screenshot 2](./doc/wearos_screenshot2.png)
-![Screenshot 3](./doc/wearos_screenshot3.png)
-![Screenshot 4](./doc/wearos_screenshot4.png)
-![Screenshot 5](./doc/wearos_screenshot5.png)
-
-## Permissions 🔒
-
-* Camera permission is required to add accounts through QR codes.
-
-## Disclaimer
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+GPL-3.0, like the upstream project. See `LICENSE`.
